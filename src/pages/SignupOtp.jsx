@@ -10,6 +10,7 @@ import { toast } from "react-toastify";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../sections/HeroSection";
 const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+
 const countryCodes = [
   { name: "India", code: "+91" },
   { name: "United States", code: "+1" },
