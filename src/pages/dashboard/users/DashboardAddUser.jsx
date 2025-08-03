@@ -20,8 +20,10 @@ function DashboardAddUser({ getUsers }) {
     email: "",
     phone: "",
     password: "",
+    address: "", // 🔥 Added address field
     status: "pending",
   });
+
   const navigate = useNavigate();
 
   const signUp = async (email, password) => {
@@ -62,20 +64,18 @@ function DashboardAddUser({ getUsers }) {
       email,
       phone,
       password,
+      address,
       status,
     } = formData;
 
-    // Save current admin's credentials before creating new user
     const currentUser = auth.currentUser;
     const adminEmail = currentUser.email;
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD; // 🔒 Replace with real admin password
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
 
-    // Create new user (this will sign in as them)
     const result = await signUp(email, password);
     const id = result?.user?.uid;
     if (!id) return;
 
-    // Add user to Firestore
     const data = {
       role,
       firstName,
@@ -84,12 +84,13 @@ function DashboardAddUser({ getUsers }) {
       gst,
       email,
       phone: phone.startsWith("+") ? phone : `+91${phone}`,
+      address, // 🆕 Add address to data
       status,
     };
+
     await addUser(id, data);
     await getUsers();
 
-    // Sign back in as admin
     await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
 
     setFormData({
@@ -101,13 +102,13 @@ function DashboardAddUser({ getUsers }) {
       email: "",
       phone: "",
       password: "",
+      address: "", // 🆕 Reset address
       status: "pending",
     });
 
     toast.success("User added successfully!");
     navigate("/dashboard/users");
 
-    //
     switch (data.status?.toLowerCase()) {
       case "pending":
         data.disclaimer =
@@ -126,14 +127,11 @@ function DashboardAddUser({ getUsers }) {
         break;
     }
 
-    //
     await emailjs.send(
       import.meta.env.VITE_SERVICE_ID,
       import.meta.env.VITE_TEMPLATE_ID,
       data,
-      {
-        publicKey: import.meta.env.VITE_PUBLIC_KEY,
-      }
+      { publicKey: import.meta.env.VITE_PUBLIC_KEY }
     );
   };
 
@@ -236,6 +234,19 @@ function DashboardAddUser({ getUsers }) {
             </div>
 
             <div>
+              <label>Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                placeholder="Address"
+                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div>
               <label>Email</label>
               <input
                 type="email"
@@ -309,6 +320,8 @@ function DashboardAddUser({ getUsers }) {
   );
 }
 
-DashboardAddUser.propTypes = { getUsers: PropTypes.func };
+DashboardAddUser.propTypes = {
+  getUsers: PropTypes.func,
+};
 
 export default DashboardAddUser;

@@ -15,6 +15,7 @@ function DashboardUser({ getUsers }) {
     gst: "",
     email: "",
     phone: "",
+    address: "",   // ✅ Address field added
     status: "pending",
   });
   const [initialStatus, setInitialStatus] = useState(null);
@@ -26,8 +27,18 @@ function DashboardUser({ getUsers }) {
     try {
       const docRef = doc(db, "users", id);
       const snapshot = await getDoc(docRef);
-      const { role, firstName, lastName, company, gst, email, phone, status } =
-        snapshot.data();
+      const {
+        role,
+        firstName,
+        lastName,
+        company,
+        gst,
+        email,
+        phone,
+        address,
+        status,
+      } = snapshot.data();
+
       setFormData((state) => ({
         ...state,
         role,
@@ -37,9 +48,10 @@ function DashboardUser({ getUsers }) {
         gst,
         email,
         phone,
+        address: address || "", // fallback if undefined
         status,
       }));
-      setInitialStatus(status); // Save the original status
+      setInitialStatus(status);
     } catch {
       toast.error("Error!");
     }
@@ -59,14 +71,27 @@ function DashboardUser({ getUsers }) {
   };
 
   const handleChange = (e) => {
-    setFormData((state) => ({ ...state, [e.target.name]: e.target.value }));
+    setFormData((state) => ({
+      ...state,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { role, firstName, lastName, company, gst, email, phone, status } =
-      formData;
+    const {
+      role,
+      firstName,
+      lastName,
+      company,
+      gst,
+      email,
+      phone,
+      address,
+      status,
+    } = formData;
+
     const data = {
       role,
       firstName,
@@ -75,6 +100,7 @@ function DashboardUser({ getUsers }) {
       gst,
       email,
       phone: phone.startsWith("+") ? phone : `+91${phone}`,
+      address,
       status,
     };
 
@@ -89,13 +115,14 @@ function DashboardUser({ getUsers }) {
       gst: "",
       email: "",
       phone: "",
+      address: "",
       status: "pending",
     });
 
     toast.success("Success!");
     navigate("/dashboard/users");
 
-    //
+    // Send email only if status has changed
     if (status !== initialStatus) {
       switch (status?.toLowerCase()) {
         case "pending":
@@ -115,7 +142,6 @@ function DashboardUser({ getUsers }) {
           break;
       }
 
-      //
       await emailjs.send(
         import.meta.env.VITE_SERVICE_ID,
         import.meta.env.VITE_TEMPLATE_ID,
@@ -128,153 +154,164 @@ function DashboardUser({ getUsers }) {
   };
 
   return (
-    <>
-      <main>
-        <section>
-          <form
-            method="post"
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-1"
-          >
-            <div className="flex justify-center items-center gap-5">
-              <label className="font-light text-xl flex gap-1">
-                <input
-                  type="radio"
-                  name="role"
-                  value="Salesperson"
-                  onChange={handleChange}
-                  checked={formData.role === "Salesperson"}
-                  // required
-                />
-                Salesperson
-              </label>
-              <hr className="border h-10" />
-              <label className="font-light text-xl flex gap-1">
-                <input
-                  type="radio"
-                  name="role"
-                  value="Business Entity"
-                  onChange={handleChange}
-                  checked={formData.role === "Business Entity"}
-                  // required
-                />
-                Business Entity
-              </label>
-            </div>
-
-            <div>
-              <label>First Name</label>
+    <main>
+      <section>
+        <form
+          method="post"
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-1"
+        >
+          <div className="flex justify-center items-center gap-5">
+            <label className="font-light text-xl flex gap-1">
               <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                placeholder="First Name"
-                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+                type="radio"
+                name="role"
+                value="Salesperson"
                 onChange={handleChange}
+                checked={formData.role === "Salesperson"}
+              />
+              Salesperson
+            </label>
+            <hr className="border h-10" />
+            <label className="font-light text-xl flex gap-1">
+              <input
+                type="radio"
+                name="role"
+                value="Business Entity"
+                onChange={handleChange}
+                checked={formData.role === "Business Entity"}
+              />
+              Business Entity
+            </label>
+          </div>
+
+          <div>
+            <label>First Name</label>
+            <input
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              placeholder="First Name"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label>Last Name</label>
+            <input
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              placeholder="Last Name"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label>Company Name</label>
+            <input
+              type="text"
+              name="company"
+              value={formData.company}
+              placeholder="Company Name"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label>GST Number</label>
+            <input
+              type="text"
+              name="gst"
+              value={formData.gst}
+              placeholder="GST Number"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label>Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              placeholder="Phone"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div>
+            <label>Address</label>
+            <textarea
+              name="address"
+              value={formData.address}
+              placeholder="User Address"
+              className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+              onChange={handleChange}
+              rows={3}
+              required
+            />
+          </div>
+
+          <div className="flex justify-center items-center gap-5 my-5">
+            <label className="font-light text-xl flex gap-1">
+              <input
+                type="radio"
+                name="status"
+                value="pending"
+                onChange={handleChange}
+                checked={formData.status === "pending"}
                 required
               />
-            </div>
-
-            <div>
-              <label>Last Name</label>
+              Pending
+            </label>
+            <hr className="border h-10" />
+            <label className="font-light text-xl flex gap-1">
               <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                placeholder="Last Name"
-                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+                type="radio"
+                name="status"
+                value="approved"
                 onChange={handleChange}
+                checked={formData.status === "approved"}
                 required
               />
-            </div>
-
-            <div>
-              <label>Company Name</label>
+              Approved
+            </label>
+            <hr className="border h-10" />
+            <label className="font-light text-xl flex gap-1">
               <input
-                type="text"
-                name="company"
-                value={formData.company}
-                placeholder="Company Name"
-                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
+                type="radio"
+                name="status"
+                value="rejected"
                 onChange={handleChange}
+                checked={formData.status === "rejected"}
                 required
               />
-            </div>
+              Rejected
+            </label>
+          </div>
 
-            <div>
-              <label>GST Number</label>
-              <input
-                type="text"
-                name="gst"
-                value={formData.gst}
-                placeholder="GST Number"
-                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div>
-              <label>Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                placeholder="Phone"
-                className="bg-white w-full rounded border py-1 px-3 outline-none focus:border-secondary"
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="flex justify-center items-center gap-5 my-5">
-              <label className="font-light text-xl flex gap-1">
-                <input
-                  type="radio"
-                  name="status"
-                  value="pending"
-                  onChange={handleChange}
-                  checked={formData.status === "pending"}
-                  required
-                />
-                Pending
-              </label>
-              <hr className="border h-10" />
-              <label className="font-light text-xl flex gap-1">
-                <input
-                  type="radio"
-                  name="status"
-                  value="approved"
-                  onChange={handleChange}
-                  checked={formData.status === "approved"}
-                  required
-                />
-                Approved
-              </label>
-              <hr className="border h-10" />
-              <label className="font-light text-xl flex gap-1">
-                <input
-                  type="radio"
-                  name="status"
-                  value="rejected"
-                  onChange={handleChange}
-                  checked={formData.status === "rejected"}
-                  required
-                />
-                Rejected
-              </label>
-            </div>
-
-            <button className="text-white bg-secondary font-medium inline-block px-7 py-3 rounded-full">
-              Update
-            </button>
-          </form>
-        </section>
-      </main>
-    </>
+          <button className="text-white bg-secondary font-medium inline-block px-7 py-3 rounded-full">
+            Update
+          </button>
+        </form>
+      </section>
+    </main>
   );
 }
 
-DashboardUser.propTypes = { getUsers: PropTypes.func };
+DashboardUser.propTypes = {
+  getUsers: PropTypes.func,
+};
 
 export default DashboardUser;
