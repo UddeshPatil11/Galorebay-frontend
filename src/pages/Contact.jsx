@@ -146,7 +146,7 @@ function Contact() {
 									We&apos;d love to hear from you - Please use the form to send us your message or ideas.
 								</p>
 								<p className="mb-10">
-									1/33, Second Floor, Mall Road, Tilak Nagar, New Delhi - 110018 (INDIA)
+									1/33, First Floor, Mall Road, Tilak Nagar, New Delhi - 110018 (INDIA)
 								</p>
 								<p>
 									Email:
@@ -157,7 +157,7 @@ function Contact() {
 								</p>
 								<hr className="border-gray-300 my-10" />
 								<h3 className="font-medium mb-3">OPENING HOURS:</h3>
-								<p>Thursday To Tuesday 10:00 Am To 7:00 Pm</p>
+								<p>Thursday To Tuesday 10:00 Am To 7:30 Pm</p>
 								{/* <p>Sundays: Closed</p> */}
 							</div>
 						</div>
