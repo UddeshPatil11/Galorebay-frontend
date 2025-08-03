@@ -157,7 +157,7 @@ function Contact() {
 								</p>
 								<hr className="border-gray-300 my-10" />
 								<h3 className="font-medium mb-3">OPENING HOURS:</h3>
-								<p>Thursday To Tuesday 10:30 Am To 7:00 Pm</p>
+								<p>Thursday To Tuesday 10:00 Am To 7:00 Pm</p>
 								{/* <p>Sundays: Closed</p> */}
 							</div>
 						</div>
