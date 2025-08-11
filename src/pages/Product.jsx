@@ -146,37 +146,56 @@ function Product({ user, getCarts }) {
 
 	// --- Add to Cart ---
 	const handleSubmit = async e => {
-		e.preventDefault()
-		if (!user) {
-			toast.error('Please sign in to add products to your cart.')
-			return navigate('/signin')
-		}
-		if (user.role !== 'admin' && user.status !== 'approved') {
-			toast.error('Your account is pending approval.')
-			return
-		}
-
-		const { brand, model, modelNo, price, type, shape, size, gender, material, image } = product
-		const data = {
-			brand, model, modelNo, price, type, shape, size, gender, material, image,
-			colors: formData
-		}
-
-		try {
-			const collectionRef = collection(db, 'users', user.id, 'carts')
-			await addDoc(collectionRef, {
-				...data,
-				created: serverTimestamp(),
-				updated: serverTimestamp()
-			})
-			await getCarts()
-			toast.success('Added to cart successfully!')
-			navigate('/cart')
-		} catch (error) {
-			toast.error('Failed to add to cart')
-			console.error('Add cart error:', error)
-		}
+	e.preventDefault()
+	if (!user) {
+		toast.error('Please sign in to add products to your cart.')
+		return navigate('/signin')
 	}
+	if (user.role !== 'admin' && user.status !== 'approved') {
+		toast.error('Your account is pending approval.')
+		return
+	}
+
+	const { brand, model, modelNo, price, type, shape, size, gender, material, image } = product
+
+	// Build the object
+	let data = {
+		brand,
+		model,
+		modelNo,
+		price,
+		type,
+		shape,
+		size: size ?? null, // replace undefined with null
+		gender,
+		material,
+		image,
+		colors: formData
+	}
+
+	// Remove any fields that are still undefined
+	Object.keys(data).forEach(key => {
+		if (data[key] === undefined) {
+			delete data[key]
+		}
+	})
+
+	try {
+		const collectionRef = collection(db, 'users', user.id, 'carts')
+		await addDoc(collectionRef, {
+			...data,
+			created: serverTimestamp(),
+			updated: serverTimestamp()
+		})
+		await getCarts()
+		toast.success('Added to cart successfully!')
+		navigate('/cart')
+	} catch (error) {
+		toast.error('Failed to add to cart')
+		console.error('Add cart error:', error)
+	}
+}
+
 
 	// --- Determine if user can view price ---
 	const canViewPrice = user && (user.role === 'admin' || user.status === 'approved')
