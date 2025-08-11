@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { db } from '../utils/firebase'
 import {
 	collection,
@@ -22,7 +22,7 @@ import ProductCarousel from '../sections/product/ProductCarousel'
 import Description from '../sections/product/Description'
 import RelatedProducts from '../sections/product/RelatedProducts'
 
-function Product({ user, getCarts, products }) {
+function Product({ user, getCarts }) {
 	const [page, setPage] = useState({})
 	const { id } = useParams()
 	const navigate = useNavigate()
@@ -34,27 +34,29 @@ function Product({ user, getCarts, products }) {
 	const [relatedProducts, setRelatedProducts] = useState([])
 	const [brandId, setBrandId] = useState(null)
 
+	// --- Fetch Page Data ---
 	const getPage = useCallback(async () => {
 		try {
 			const docRef = doc(db, 'pages', 'GLUmSaJl79QHhQd16wQ1')
 			const snapshot = await getDoc(docRef)
-			const data = snapshot.data()
-			setPage(data)
+			setPage(snapshot.data())
 		} catch {
-			toast.error('Error!')
+			toast.error('Error loading page!')
 		}
 	}, [])
 
+	// --- Fetch Product ---
 	const getProduct = useCallback(async () => {
 		try {
 			const docRef = doc(db, 'products', id)
 			const snapshot = await getDoc(docRef)
 			setProduct({ id: snapshot.id, ...snapshot.data() })
 		} catch {
-			toast.error('Error!')
+			toast.error('Error loading product!')
 		}
 	}, [id])
 
+	// --- Fetch Colors ---
 	const getColors = useCallback(async () => {
 		try {
 			const collectionRef = collection(db, 'products', id, 'colors')
@@ -67,34 +69,35 @@ function Product({ user, getCarts, products }) {
 				return acc
 			}, {}))
 		} catch {
-			toast.error('Error!')
+			toast.error('Error loading colors!')
 		}
 	}, [id])
 
+	// --- Fetch Sizes ---
 	const getSizes = useCallback(async () => {
 		try {
 			const collectionRef = collection(db, 'products', id, 'sizes')
 			const queryRef = query(collectionRef, orderBy('created', 'desc'))
 			const snapshot = await getDocs(queryRef)
-			const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-			setSizes(data)
+			setSizes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
 		} catch {
-			toast.error('Error!')
+			toast.error('Error loading sizes!')
 		}
 	}, [id])
 
+	// --- Fetch Images ---
 	const getImages = useCallback(async () => {
 		try {
 			const collectionRef = collection(db, 'products', id, 'images')
 			const queryRef = query(collectionRef, orderBy('created', 'desc'))
 			const snapshot = await getDocs(queryRef)
-			const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-			setImages([{ image: product.image }, ...data])
+			setImages([{ image: product.image }, ...snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))])
 		} catch {
-			toast.error('Error!')
+			toast.error('Error loading images!')
 		}
 	}, [id, product])
 
+	// --- Fetch Related Products ---
 	const getRelatedProducts = useCallback(async () => {
 		if (!product.brand) return
 		try {
@@ -114,17 +117,18 @@ function Product({ user, getCarts, products }) {
 					)
 				)
 
-				const related = productsSnapshot.docs
-					.map(doc => ({ id: doc.id, ...doc.data() }))
-					.filter(item => item.id !== product.id)
-
-				setRelatedProducts(related)
+				setRelatedProducts(
+					productsSnapshot.docs
+						.map(doc => ({ id: doc.id, ...doc.data() }))
+						.filter(item => item.id !== product.id)
+				)
 			}
 		} catch (error) {
 			console.error('Error fetching related products:', error)
 		}
 	}, [product])
 
+	// --- Hooks ---
 	useEffect(() => { getPage() }, [getPage])
 	useEffect(() => { getProduct() }, [getProduct])
 	useEffect(() => { getColors() }, [getColors])
@@ -132,21 +136,22 @@ function Product({ user, getCarts, products }) {
 	useEffect(() => { getImages() }, [getImages])
 	useEffect(() => { getRelatedProducts() }, [getRelatedProducts])
 
-	const calculateTotalQuantity = () => {
-		return Object.values(formData).reduce((sum, quantity) => sum + Number(quantity), 0)
-	}
+	// --- Quantity Calculation ---
+	const calculateTotalQuantity = () =>
+		Object.values(formData).reduce((sum, quantity) => sum + Number(quantity), 0)
 
 	const handleChange = e => {
 		setFormData(state => ({ ...state, [e.target.name]: e.target.value }))
 	}
 
+	// --- Add to Cart ---
 	const handleSubmit = async e => {
 		e.preventDefault()
 		if (!user) {
 			toast.error('Please sign in to add products to your cart.')
 			return navigate('/signin')
 		}
-		if (user.status !== 'approved') {
+		if (user.role !== 'admin' && user.status !== 'approved') {
 			toast.error('Your account is pending approval.')
 			return
 		}
@@ -173,6 +178,9 @@ function Product({ user, getCarts, products }) {
 		}
 	}
 
+	// --- Determine if user can view price ---
+	const canViewPrice = user && (user.role === 'admin' || user.status === 'approved')
+
 	return (
 		<>
 			<Helmet>
@@ -187,14 +195,15 @@ function Product({ user, getCarts, products }) {
 					<div className="lg:w-2/5">
 						<ProductCarousel images={images} />
 					</div>
+
 					<div className="lg:w-2/5">
 						<h3 className="text-primary font-medium text-xs uppercase mb-1">{product.brand}</h3>
 						<h1 className="font-medium text-xl mb-5">
 							{product.model} <br /> {product.modelNo}
 						</h1>
 
-						{/* ✅ Show purchase section only if user is approved */}
-						{user && user.status === 'approved' ? (
+						{/* Show purchase section only if admin or approved */}
+						{canViewPrice ? (
 							<>
 								<p className="font-medium text-lg mb-5">₹ {product.price}</p>
 								<form method="post" onSubmit={handleSubmit} className="mb-3">
@@ -229,7 +238,6 @@ function Product({ user, getCarts, products }) {
 														name={key}
 														value={value}
 														min={0}
-														max={value}
 														placeholder="Qty"
 														className="bg-white w-full rounded border py-1 px-3 outline-none mx-1 focus:border-secondary"
 														onChange={handleChange}
@@ -298,8 +306,7 @@ function Product({ user, getCarts, products }) {
 
 Product.propTypes = {
 	user: PropTypes.object,
-	getCarts: PropTypes.func,
-	products: PropTypes.array
+	getCarts: PropTypes.func
 }
 
 export default Product
